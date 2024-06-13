@@ -8,12 +8,20 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
+  TextField,
+  Switch,
+  colors,
 } from "@mui/material";
+import { DemoContainer, DemoItem } from "@mui/x-date-pickers/internals/demo";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateRangePicker } from "@mui/x-date-pickers-pro/DateRangePicker";
 import { ResponsiveLine } from "@nivo/line";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
-import { clsx } from "clsx";
+import { useTheme } from "@mui/material/styles";
+import { ResponsiveLineCanvas } from "@nivo/line";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -48,6 +56,8 @@ export default function Home() {
   });
   const [timeResolution, setTimeResolution] = useState("hourly");
   const [timeRange, setTimeRange] = useState([5, 11]);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(true); // State for toggling dark/light mode
 
   const handlePositionChange = (newPosition: [number, number]) => {
     setPosition(newPosition);
@@ -113,6 +123,14 @@ export default function Home() {
         }),
       });
 
+      const handleApply = () => {
+        if (timeResolution === "hourly") {
+          console.log("Slider Value:", timeRange);
+        } else if (timeResolution === "daily") {
+          console.log("Selected Date:", selectedDate);
+        }
+      };
+
       if (response.ok) {
         console.log("Settings applied successfully");
       } else {
@@ -148,11 +166,25 @@ export default function Home() {
     }
   };
 
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   return (
-    <div className="bg-black text-white min-h-screen p-8 md:p-6 lg:p-8">
+    <div
+      className={`${isDarkMode ? "bg-black text-white" : "bg-white text-black"
+        } min-h-screen p-8 md:p-6 lg:p-8`}
+    >
       <div className="inline-flex flex-col justify-center items-center gap-14 relative ml-3">
+        <div className="inline-flex flex-row justify-between items-center w-full">
+          <div className="text-3xl ml-2 mt-2">UmidaAg</div>
+          <Switch
+            checked={isDarkMode}
+            onChange={toggleDarkMode}
+            color="primary"
+          />
+        </div>
         <div className="inline-flex flex-col  gap-[50px] relative ml-4 ">
-         <div className="text-white text-3xl ml-2 mt-2">Dashboard</div>
           <div className="inline-flex justify-center items-center gap-[30px] relative">
             <div className="flex flex-col w-[669px] h-[642px] items-start gap-[11px] relative">
               <div className="relative w-[669px] h-[448px] bg-black rounded-[20px] border border-solid border-[#b2b2b2]">
@@ -163,7 +195,7 @@ export default function Home() {
                   style={{
                     padding: "10px",
                     height: "100%",
-                    borderRadius : "20px",
+                    borderRadius: "20px",
                   }}
                 >
                   <TileLayer
@@ -174,9 +206,15 @@ export default function Home() {
               </div>
               <div className="relative w-[669px] h-[183px] bg-black rounded-[15px] border border-solid border-[#bfbfbf]">
                 {" "}
-                <Card className="bg-black  rounded-lg">
+                <Card
+                  className={`${isDarkMode ? "bg-black" : "bg-white"
+                    } rounded-lg`}
+                >
                   <CardHeader>
-                    <CardTitle className=" flex items-center justify-center text-center text-sm md:text-base text-white">
+                    <CardTitle
+                      className={`flex items-center justify-center text-center text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                        }`}
+                    >
                       Resolution Settings
                     </CardTitle>
                   </CardHeader>
@@ -192,64 +230,122 @@ export default function Home() {
                         value="hourly"
                         control={<Radio />}
                         label="Hourly"
-                        className="text-white"
+                        className={`${isDarkMode ? "text-white" : "text-black"}`}
                       />
                       <FormControlLabel
                         value="daily"
                         control={<Radio />}
                         label="Daily"
-                        className="text-white"
+                        className={`${isDarkMode ? "text-white" : "text-black"}`}
                       />
                       <FormControlLabel
                         value="monthly"
                         control={<Radio />}
                         label="Monthly"
-                        className="text-white"
+                        className={`${isDarkMode ? "text-white" : "text-black"}`}
                       />
                     </RadioGroup>
-<div className="flex mb-4">
-                    <MuiSlider
-                      value={timeRange}
-                      onChange={(e, value) => setTimeRange(value as number[])}
-                      min={0}
-                      max={23}
-                      marks={true}
-                      step={2}
-                      valueLabelDisplay="auto"
-                      className="w-full"
-                      sx={{
-                        color: "#2196F3",
-                        "& .MuiSlider-rail": {
-                          color: "#2196F3",
-                        },
-                        "& .MuiSlider-track": {
-                          color: "#2196F3",
-                        },
-                        "& .MuiSlider-thumb": {
-                          color: "#2196F3",
-                        },
-                      }}
-                    ></MuiSlider>
-                    <div className="flex justify-between items-center">
-                      <MuiButton
-                        variant="contained"
-                        color="primary"
-                        onClick={handleApply}
-                        className="text-white bg-blue-500 hover:bg-blue-600 text-xs md:text-sm ml-4"
-                      >
-                        APPLY
-                      </MuiButton>
-                    </div>
+                    <div className="flex mb-4">
+                      {timeResolution === "hourly" && (
+                        <MuiSlider
+                          value={timeRange}
+                          onChange={(e, value) =>
+                            setTimeRange(value as number[])
+                          }
+                          min={0}
+                          max={23}
+                          marks={true}
+                          step={2}
+                          valueLabelDisplay="auto"
+                          className="w-full"
+                          sx={{
+                            color: "#2196F3",
+                            "& .MuiSlider-rail": {
+                              color: "#2196F3",
+                            },
+                            "& .MuiSlider-track": {
+                              color: "#2196F3",
+                            },
+                            "& .MuiSlider-thumb": {
+                              color: "#2196F3",
+                            },
+                          }}
+                        ></MuiSlider>
+                      )}
+                      {timeResolution === "daily" && (
+                        <div
+                          className={`flex justify-center items-center ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DemoContainer
+                              components={[
+                                "DateRangePicker",
+                                "DateRangePicker",
+                                "DateRangePicker",
+                              ]}
+                            >
+                              <DemoItem
+                                label=""
+                                component="DateRangePicker"
+                              >
+                                <DateRangePicker calendars={1} />
+                              </DemoItem>
+                            </DemoContainer>
+                          </LocalizationProvider>
+                        </div>
+                      )}
+                      {timeResolution === "monthly" && (
+                        <div
+                          className={`flex justify-center items-center ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DemoContainer components={["DateRangePicker"]}>
+                              <DateRangePicker
+                                localeText={{
+                                  start: "--/--/----",
+                                  end: "--/--/----",
+                                }}
+                              />
+                            </DemoContainer>
+                          </LocalizationProvider>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <MuiButton
+                          variant="contained"
+                          color="primary"
+                          onClick={handleApply}
+                          className={`${isDarkMode
+                            ? "text-white bg-blue-500 hover:bg-blue-600"
+                            : "text-black bg-blue-500 hover:bg-blue-600"
+                            } text-xs md:text-sm ml-4`}
+                        >
+                          APPLY
+                        </MuiButton>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
             <div className="flex flex-wrap w-[677px] items-start gap-[30px_30px] relative">
-              <div className="relative w-[321px] h-[311px]  bg-black rounded-[20px] ">
-                <Card className="bg-black">
+              <div
+                className={`relative w-[321px] h-[311px] ${isDarkMode ? "bg-black" : "bg-white"
+                  } rounded-[20px] ${isDarkMode
+                    ? "border border-solid border-[#ffffffb2]"
+                    : "border border-solid border-[#0000001a]"
+                  }`}
+              >
+                <Card
+                  className={`${isDarkMode ? "bg-black" : "bg-white"}`}
+                >
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-center text-sm md:text-base text-white">
+                    <CardTitle
+                      className={`flex items-center justify-center text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                        }`}
+                    >
                       LIFTING SETTINGS
                     </CardTitle>
                   </CardHeader>
@@ -257,45 +353,66 @@ export default function Home() {
                     <div className="space-y-2">
                       <Label
                         htmlFor="pressure-water"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Amount of Water
                       </Label>
-                      <div  className="flex">
-                      <Input
-                        id="pressure-water"
-                        value={pressureSettings.amountOfWater}
-                        onChange={(e) =>
-                          handleSettingsChange("pressureSettings", {
-                            ...pressureSettings,
-                            amountOfWater: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /> <div className="text-white ml-5 mt-2">ltrs.</div>
+                      <div className="flex">
+                        <Input
+                          id="pressure-water"
+                          value={pressureSettings.amountOfWater}
+                          onChange={(e) =>
+                            handleSettingsChange("pressureSettings", {
+                              ...pressureSettings,
+                              amountOfWater: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode
+                            ? "text-white bg-black"
+                            : "text-black bg-white"
+                            } w-4/5`}
+                        />{" "}
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          ltrs.
+                        </div>
                       </div>
                       <Label
                         htmlFor="pressure-required"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Lifting Height
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="pressure-required"
-                        value={pressureSettings.pressureRequired}
-                        onChange={(e) =>
-                          handleSettingsChange("pressureSettings", {
-                            ...pressureSettings,
-                            pressureRequired: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /><div className="text-white ml-5 mt-2">ft.</div>
+                        <Input
+                          id="pressure-required"
+                          value={pressureSettings.pressureRequired}
+                          onChange={(e) =>
+                            handleSettingsChange("pressureSettings", {
+                              ...pressureSettings,
+                              pressureRequired: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode
+                            ? "text-white bg-black"
+                            : "text-black bg-white"
+                            } w-4/5`}
+                        />{" "}
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          ft.
+                        </div>
                       </div>
                       <Label
                         htmlFor="pressure-time"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Time of Day
                       </Label>
@@ -305,10 +422,7 @@ export default function Home() {
                           pressureSettings.timeOfDay.end,
                         ]}
                         onChange={(e, value) =>
-                          handleSliderChange(
-                            "pressureSettings",
-                            value as number[]
-                          )
+                          handleSliderChange("pressureSettings", value as number[])
                         }
                         min={0}
                         max={24}
@@ -333,10 +447,19 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
-              <div className="relative w-[321px] h-[311px] bg-black rounded-[20px] border border-solid border-[#ffffffb2]">
-                <Card className="bg-black ">
+              <div
+                className={`relative w-[321px] h-[311px] ${isDarkMode ? "bg-black" : "bg-white"
+                  } rounded-[20px] ${isDarkMode
+                    ? "border border-solid border-[#ffffffb2]"
+                    : "border border-solid border-[#0000001a]"
+                  }`}
+              >
+                <Card className={`${isDarkMode ? "bg-black" : "bg-white"}`}>
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-center text-sm md:text-base text-white">
+                    <CardTitle
+                      className={`flex items-center justify-center text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                        }`}
+                    >
                       DISTRIBUTION SETTINGS
                     </CardTitle>
                   </CardHeader>
@@ -344,46 +467,62 @@ export default function Home() {
                     <div className="space-y-2">
                       <Label
                         htmlFor="solar-area"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Area of Distribution
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="solar-area"
-                        value={solarSettings.netAreaOfActiveSolarPanels}
-                        onChange={(e) =>
-                          handleSettingsChange("solarSettings", {
-                            ...solarSettings,
-                            netAreaOfActiveSolarPanels: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      />
-                      <div className="text-white ml-5 mt-2">km</div>
+                        <Input
+                          id="solar-area"
+                          value={solarSettings.netAreaOfActiveSolarPanels}
+                          onChange={(e) =>
+                            handleSettingsChange("solarSettings", {
+                              ...solarSettings,
+                              netAreaOfActiveSolarPanels: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                            } w-4/5`}
+                        />
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          km
+                        </div>
                       </div>
                       <Label
                         htmlFor="solar-efficiency"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Depth of Distribution
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="solar-efficiency"
-                        value={solarSettings.solarPanelEfficiency}
-                        onChange={(e) =>
-                          handleSettingsChange("solarSettings", {
-                            ...solarSettings,
-                            solarPanelEfficiency: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /><div className="text-white ml-5 mt-2">ft.</div>
+                        <Input
+                          id="solar-efficiency"
+                          value={solarSettings.solarPanelEfficiency}
+                          onChange={(e) =>
+                            handleSettingsChange("solarSettings", {
+                              ...solarSettings,
+                              solarPanelEfficiency: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                            } w-4/5`}
+                        />
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          ft.
+                        </div>
                       </div>
                       <Label
                         htmlFor="solar-time"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Time of Day
                       </Label>
@@ -418,10 +557,19 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
-              <div className="relative w-[321px] h-[311px] bg-black rounded-[20px] border border-solid border-[#ffffffb2]">
-                <Card className="bg-black ">
+              <div
+                className={`relative w-[321px] h-[311px] ${isDarkMode ? "bg-black" : "bg-white"
+                  } rounded-[20px] ${isDarkMode
+                    ? "border border-solid border-[#ffffffb2]"
+                    : "border border-solid border-[#0000001a]"
+                  }`}
+              >
+                <Card className={`${isDarkMode ? "bg-black" : "bg-white"}`}>
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-center text-sm md:text-base text-white">
+                    <CardTitle
+                      className={`flex items-center justify-center text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                        }`}
+                    >
                       PRESSURIZATION SETTINGS
                     </CardTitle>
                   </CardHeader>
@@ -429,45 +577,62 @@ export default function Home() {
                     <div className="space-y-2">
                       <Label
                         htmlFor="distribution-area"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Amount of water
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="distribution-area"
-                        value={distributionSettings.areaOfDistribution}
-                        onChange={(e) =>
-                          handleSettingsChange("distributionSettings", {
-                            ...distributionSettings,
-                            areaOfDistribution: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /><div className="text-white ml-5 mt-2">ltrs.</div>
+                        <Input
+                          id="distribution-area"
+                          value={distributionSettings.areaOfDistribution}
+                          onChange={(e) =>
+                            handleSettingsChange("distributionSettings", {
+                              ...distributionSettings,
+                              areaOfDistribution: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                            } w-4/5`}
+                        />
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          ltrs.
+                        </div>
                       </div>
                       <Label
                         htmlFor="distribution-depth"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Pressurization required
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="distribution-depth"
-                        value={distributionSettings.depthOfDistribution}
-                        onChange={(e) =>
-                          handleSettingsChange("distributionSettings", {
-                            ...distributionSettings,
-                            depthOfDistribution: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /><div className="text-white ml-5 mt-2">ft.</div>
+                        <Input
+                          id="distribution-depth"
+                          value={distributionSettings.depthOfDistribution}
+                          onChange={(e) =>
+                            handleSettingsChange("distributionSettings", {
+                              ...distributionSettings,
+                              depthOfDistribution: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                            } w-4/5`}
+                        />
+                        <div
+                          className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                            }`}
+                        >
+                          ft.
+                        </div>
                       </div>
                       <Label
                         htmlFor="distribution-time"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Time of Day
                       </Label>
@@ -505,10 +670,11 @@ export default function Home() {
                   </CardContent>
                 </Card>
               </div>
-              <div className="relative w-[321px] h-[311px] bg-black rounded-[20px] border border-solid border-[#ffffffb2]">
-                <Card className="bg-black">
+              <div className="relative w-[321px] h-[311px] rounded-[20px]">
+                <Card className={`${isDarkMode ? "bg-black" : "bg-white"}`}>
                   <CardHeader>
-                    <CardTitle className="flex items-center justify-center text-sm md:text-base text-white mt-2.5">
+                    <CardTitle className={`flex items-center justify-center text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                      }`}>
                       SOLAR PANEL SETTINGS
                     </CardTitle>
                   </CardHeader>
@@ -516,45 +682,51 @@ export default function Home() {
                     <div className="space-y-6">
                       <Label
                         htmlFor="amount-water"
-                        className="text-sm md:text-base text-white"
+                        className={`text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                          }`}
                       >
                         Net Area of Active Solar Panels
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="amount-water"
-                        value={liftingSettings.amountOfWater}
-                        onChange={(e) =>
-                          handleSettingsChange("liftingSettings", {
-                            ...liftingSettings,
-                            amountOfWater: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      ></Input><div className="text-white ml-5 mt-2">m³</div>
+                        <Input
+                          id="amount-water"
+                          value={liftingSettings.amountOfWater}
+                          onChange={(e) =>
+                            handleSettingsChange("liftingSettings", {
+                              ...liftingSettings,
+                              amountOfWater: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                            } w-4/5`}
+                        ></Input><div className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                          }`}>m³</div>
                       </div>
 
                       <Label
                         htmlFor="lifting-height"
-                        className="text-sm md:text-base text-white"
+                        className={`mt-2 text-sm md:text-base ${isDarkMode ? "text-white" : "text-black"
+                        }`}
                       >
                         Solar Panel Efficiency
                       </Label>
                       <div className="flex">
-                      <Input
-                        id="lifting-height"
-                        value={liftingSettings.liftingHeight}
-                        onChange={(e) =>
-                          handleSettingsChange("liftingSettings", {
-                            ...liftingSettings,
-                            liftingHeight: Number(e.target.value),
-                          })
-                        }
-                        className="text-white bg-black w-4/5"
-                      /><div className="text-white ml-5 mt-2">%</div>
+                        <Input
+                          id="lifting-height"
+                          value={liftingSettings.liftingHeight}
+                          onChange={(e) =>
+                            handleSettingsChange("liftingSettings", {
+                              ...liftingSettings,
+                              liftingHeight: Number(e.target.value),
+                            })
+                          }
+                          className={`${isDarkMode ? "text-white bg-black" : "text-black bg-white"
+                          } w-4/5`}
+                        /><div className={`ml-5 mt-2 ${isDarkMode ? "text-white" : "text-black"
+                          }`}>%</div>
                       </div>
                       <div className="mt-80"></div>
-                      
+
                     </div>
                   </CardContent>
                 </Card>
@@ -564,42 +736,42 @@ export default function Home() {
 
           <div className="inline-flex flex-col items-start gap-[19px] relative flex-[0_0_auto]">
             <div className="inline-flex items-start gap-[18px] relative flex-[0_0_auto]">
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Cloud</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Soil Moisture</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Solar Radiation</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Evapotranspiration</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Power Generated</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Water Demand</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
             </div>
             <div className="inline-flex items-start gap-[18px] relative flex-[0_0_auto]">
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Net Demand</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Power Demand</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Deficit</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Surplus Power</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
-              <div className="relative w-[450px] h-[299px] bg-black rounded-[13.94px] ">
-                <Card className="p-2 bg-black rounded-lg border border-white">
-                  <div className="text-white mb-3">Buying/Selling</div>
-                  <LineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" />
+              <div className={`${isDarkMode ? "bg-black" : "bg-white"} relative w-[450px] h-[299px] rounded-[13.94px]`}>
+                <Card className={`${isDarkMode ? "bg-black border-white" : "bg-white border-slate-200"} p-2 rounded-lg`}>
+                  <div className={`mb-3 ${isDarkMode ? "text-white" : "text-black"}`}>Irrigation Schedule</div>
+                  <MuiLineChart className="w-full h-[150px] md:h-[200px] lg:h-[250px]" isDarkMode={isDarkMode} />
                 </Card>
               </div>
             </div>
@@ -610,34 +782,39 @@ export default function Home() {
   );
 }
 
-function LineChart({ className }: { className: string }) {
+function MuiLineChart({ className, isDarkMode }: { className: string; isDarkMode: boolean }) {
+  
+  const theme = useTheme();
+
+  const data = [
+    {
+      id: "Desktop",
+      data: [
+        { x: "0", y: 43 },
+        { x: "20", y: 13 },
+        { x: "40", y: 61 },
+        { x: "60", y: 45 },
+        { x: "80", y: 26 },
+        { x: "100", y: 100 },
+      ],
+    },
+    {
+      id: "Mobile",
+      data: [
+        { x: "0", y: 60 },
+        { x: "20", y: 48 },
+        { x: "40", y: 17 },
+        { x: "60", y: 78 },
+        { x: "80", y: 66 },
+        { x: "100", y: 100 },
+      ],
+    },
+  ];
+
   return (
     <div className={className}>
-      <ResponsiveLine
-        data={[
-          {
-            id: "Desktop",
-            data: [
-              { x: "0", y: 43 },
-              { x: "20", y: 13 },
-              { x: "40", y: 61 },
-              { x: "60", y: 45 },
-              { x: "80", y: 26 },
-              { x: "100", y: 100 },
-            ],
-          },
-          {
-            id: "Mobile",
-            data: [
-              { x: "0", y: 60 },
-              { x: "20", y: 48 },
-              { x: "40", y: 17},
-              { x: "60", y: 78 },
-              { x: "80", y: 66 },
-              { x: "100", y: 100 },
-            ],
-          },
-        ]}
+      <ResponsiveLineCanvas
+        data={data}
         margin={{ top: 10, right: 10, bottom: 40, left: 40 }}
         xScale={{
           type: "point",
@@ -650,6 +827,7 @@ function LineChart({ className }: { className: string }) {
         axisBottom={{
           tickSize: 5,
           tickPadding: 16,
+          tickValues: 6,
         }}
         axisLeft={{
           tickSize: 5,
@@ -659,33 +837,35 @@ function LineChart({ className }: { className: string }) {
         colors={["#D500F9", "#26A69A"]}
         pointSize={12}
         pointColor={"#ffffff"}
-        useMesh={true}
+        pointBorderColor={colors}
+        pointBorderWidth={1}
         gridYValues={1}
-        theme={{
-          axis: {
-            ticks: {
-              text: {
-                fill: "#ffffff", // Set tick text color to white
+        theme={
+          {
+            axis: {
+              ticks: {
+                text: {
+                  fill: isDarkMode ? 'white' : theme.palette.text.primary,
+                },
               },
             },
-          },
-          tooltip: {
-            chip: {
-              borderRadius: "9999px",
+            tooltip: {
+              chip: {
+                borderRadius: '9999px',
+              },
+              container: {
+                fontSize: '12px',
+                textTransform: 'capitalize',
+                borderRadius: '6px',
+              },
             },
-            container: {
-              fontSize: "12px",
-              textTransform: "capitalize",
-              borderRadius: "6px",
+            grid: {
+              line: {
+                stroke: isDarkMode ? 'gray' : theme.palette.text.primary,
+              },
             },
-          },
-          grid: {
-            line: {
-              stroke: "#FFFFFF",
-            },
-          },
-        }}
-        role="application"
+          }
+        }
       />
     </div>
   );
